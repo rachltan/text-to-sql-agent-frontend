@@ -757,9 +757,11 @@ const styles = {
     padding: 10,
     fontSize: 13,
     borderRadius: 10,
-    overflowX: 'auto',
+    overflowY: 'auto',
     border: '1px solid rgba(31,41,55,0.9)',
     maxHeight: 260,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
   },
   cite: {
     fontSize: 14,
