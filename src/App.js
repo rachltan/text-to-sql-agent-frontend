@@ -53,7 +53,15 @@ const App = () => {
     setResult(null);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/ask', { query: searchQuery });
+      const recentHistory = messages.slice(-10).map(msg => ({
+        question: msg.question,
+        answer: msg.answer,
+        sql: msg.sql || "",
+      }));
+      const response = await axios.post('http://127.0.0.1:8000/ask', {
+        query: searchQuery,
+        conversation_history: recentHistory,
+      });
       const payload = {
         id: Date.now(),
         question: searchQuery,
