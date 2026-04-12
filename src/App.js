@@ -53,7 +53,15 @@ const App = () => {
     setResult(null);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/ask', { query: searchQuery });
+      const recentHistory = messages.slice(-10).map(msg => ({
+        question: msg.question,
+        answer: msg.answer,
+        sql: msg.sql || "",
+      }));
+      const response = await axios.post('http://127.0.0.1:8000/ask', {
+        query: searchQuery,
+        conversation_history: recentHistory,
+      });
       const payload = {
         id: Date.now(),
         question: searchQuery,
@@ -749,9 +757,11 @@ const styles = {
     padding: 10,
     fontSize: 13,
     borderRadius: 10,
-    overflowX: 'auto',
+    overflowY: 'auto',
     border: '1px solid rgba(31,41,55,0.9)',
     maxHeight: 260,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
   },
   cite: {
     fontSize: 14,
