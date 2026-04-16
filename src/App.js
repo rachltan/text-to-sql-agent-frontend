@@ -4,6 +4,9 @@ import { Search, Database, History, Terminal, BarChart3, Info, Loader2, Trash2 }
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const App = () => {
+  // Your Live Azure Backend Domain
+  const BACKEND_URL = 'https://utcapstone-backend-akh2c2cjdua3hfa8.canadacentral-01.azurewebsites.net';
+
   const [query, setQuery] = useState("");
   const [result, setResult] = useState(null); // last answer shown in evidence panel
   const [loading, setLoading] = useState(false);
@@ -14,7 +17,7 @@ const App = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/history?limit=20');
+        const res = await axios.get(`${BACKEND_URL}/history?limit=20`);
         const items = res.data?.history || [];
         setHistory(items);
       } catch (err) {
@@ -22,11 +25,11 @@ const App = () => {
       }
     };
     fetchHistory();
-  }, []);
+  }, [BACKEND_URL]);
 
   const deleteHistoryItem = async (id) => {
     try {
-      await axios.delete(`http://127.0.0.1:8000/history/${id}`);
+      await axios.delete(`${BACKEND_URL}/history/${id}`);
       setHistory((prev) => prev.filter((h) => h.id !== id));
     } catch (err) {
       console.error("Failed to delete history item:", err);
@@ -37,7 +40,7 @@ const App = () => {
     try {
       const ids = history.map((h) => h.id);
       await Promise.all(
-        ids.map((id) => axios.delete(`http://127.0.0.1:8000/history/${id}`))
+        ids.map((id) => axios.delete(`${BACKEND_URL}/history/${id}`))
       );
       setHistory([]);
     } catch (err) {
@@ -58,10 +61,12 @@ const App = () => {
         answer: msg.answer,
         sql: msg.sql || "",
       }));
-      const response = await axios.post('http://127.0.0.1:8000/ask', {
+
+      const response = await axios.post(`${BACKEND_URL}/ask`, {
         query: searchQuery,
         conversation_history: recentHistory,
       });
+
       const payload = {
         id: Date.now(),
         question: searchQuery,
@@ -80,7 +85,7 @@ const App = () => {
       });
     } catch (err) {
       console.error("Backend Connection Error:", err);
-      setError("We couldn't reach the analytics backend. Make sure the FastAPI server is running on http://127.0.0.1:8000 and then try again.");
+      setError(`Backend Error: Could not reach CoPoint Intelligence at ${BACKEND_URL}. Ensure your backend CORS settings allow this frontend domain.`);
     }
     setLoading(false);
   };
@@ -97,8 +102,6 @@ const App = () => {
               <div style={styles.headerTitle}>CoPoint AI</div>
               <div style={styles.headerSubtitle}>Natural language analytics on your warehouse</div>
             </div>
-          </div>
-          <div style={styles.headerRight}>
           </div>
         </header>
 
@@ -296,7 +299,7 @@ const App = () => {
                       executeQuery();
                     }
                   }}
-                  placeholder="Ask a business question, e.g. “How did Q4 revenue trend by month?”"
+                  placeholder="Ask a business question..."
                 />
               </div>
               <button
@@ -335,7 +338,6 @@ const App = () => {
           </aside>
         </div>
 
-        {/* CSS for Spinner Rotation */}
         <style>{`
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
           .spinner { animation: spin 1.2s linear infinite; }
@@ -352,7 +354,7 @@ const styles = {
     margin: 0,
     padding: 0,
     background: 'radial-gradient(circle at top left, #0F172A, #020617)',
-    fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: "'Inter', sans-serif",
     color: '#020617',
     boxSizing: 'border-box',
     overflow: 'hidden',
@@ -360,11 +362,7 @@ const styles = {
   shell: {
     height: '100%',
     width: '100%',
-    background: 'linear-gradient(135deg, rgba(15,23,42,0.96), rgba(15,23,42,0.96))',
-    borderRadius: 0,
-    borderTop: '1px solid rgba(148,163,184,0.25)',
-    boxShadow: '0 0 0 rgba(0,0,0,0)',
-    overflow: 'hidden',
+    background: 'rgba(15,23,42,0.96)',
     display: 'flex',
     flexDirection: 'column',
   },
@@ -374,7 +372,7 @@ const styles = {
     justifyContent: 'space-between',
     padding: '16px 24px',
     borderBottom: '1px solid rgba(31,41,55,0.9)',
-    background: 'linear-gradient(90deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9))',
+    background: 'rgba(15,23,42,0.98)',
   },
   headerLeft: {
     display: 'flex',
@@ -390,85 +388,59 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 12px 30px rgba(37,99,235,0.7)',
+    boxShadow: '0 8px 20px rgba(37,99,235,0.5)',
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 600,
-    letterSpacing: 0.2,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#9CA3AF',
-  },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  envBadge: {
-    fontSize: 30,
-    padding: '7px 14px',
-    borderRadius: 999,
-    border: '1px solid rgba(148,163,184,0.6)',
-    color: '#E5E7EB',
-    background: 'rgba(15,23,42,0.85)',
   },
   layout: {
     display: 'grid',
     gridTemplateColumns: '230px minmax(0, 1.4fr) 320px',
-    minHeight: 0,
     flex: 1,
-    maxHeight: '100%',
     overflow: 'hidden',
-    background: 'radial-gradient(circle at top left, rgba(15,23,42,1), rgba(15,23,42,0.98))',
   },
   paneSideLeft: {
     borderRight: '1px solid rgba(31,41,55,0.9)',
-    padding: '18px 14px 20px',
-    background: 'radial-gradient(circle at top, rgba(15,23,42,1), rgba(15,23,42,0.98))',
+    padding: '18px 14px',
+    background: 'rgba(15,23,42,1)',
     display: 'flex',
     flexDirection: 'column',
     gap: 8,
   },
-  historyHeaderRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-    marginBottom: 4,
-  },
   paneSideRight: {
     borderLeft: '1px solid rgba(31,41,55,0.9)',
-    padding: '18px 18px 20px',
-    background: 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,1))',
+    padding: '18px',
+    background: 'rgba(15,23,42,0.98)',
     color: '#CBD5F5',
     display: 'flex',
     flexDirection: 'column',
   },
   paneMain: {
-    padding: '12px 18px 14px',
+    padding: '12px 18px',
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
     color: '#E5E7EB',
-    minHeight: 0,
+    overflow: 'hidden',
   },
   paneTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    color: '#E5E7EB',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    color: '#9CA3AF',
     marginBottom: 8,
   },
   emptyHistory: {
     fontSize: 12,
     color: '#6B7280',
-    marginTop: 6,
   },
   historyItem: {
     display: 'flex',
@@ -476,14 +448,10 @@ const styles = {
     gap: 8,
     padding: '10px 12px',
     borderRadius: 8,
-    border: '1px solid rgba(31,41,55,0.6)',
-    background: 'radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.4))',
+    background: 'rgba(31,41,55,0.4)',
     color: '#D1D5DB',
     fontSize: 12,
     cursor: 'pointer',
-    textAlign: 'left',
-    width: '100%',
-    overflow: 'hidden',
   },
   historyItemMain: {
     display: 'flex',
@@ -496,74 +464,60 @@ const styles = {
     width: 6,
     height: 6,
     borderRadius: 999,
-    background: 'linear-gradient(135deg, #22C55E, #4ADE80)',
+    background: '#22C55E',
   },
   historyText: {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    flex: 1,
-    minWidth: 0,
   },
   historyDelete: {
-    border: 'none',
     background: 'transparent',
+    border: 'none',
     color: '#6B7280',
     cursor: 'pointer',
-    padding: 2,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   clearHistoryButton: {
-    border: 'none',
     background: 'transparent',
+    border: 'none',
     color: '#9CA3AF',
-    fontSize: 11,
+    fontSize: 10,
     cursor: 'pointer',
-    padding: 2,
   },
   mainTop: {
     marginBottom: 4,
   },
-  mainTitleRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
   mainTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 600,
     color: '#F9FAFB',
   },
   mainSubtitle: {
-    marginTop: 4,
     fontSize: 13,
     color: '#9CA3AF',
-    maxWidth: 520,
+    marginTop: 4,
   },
   suggestionRow: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 12,
   },
   suggestionChip: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    padding: '9px 14px',
+    padding: '8px 14px',
     borderRadius: 999,
-    border: '1px solid rgba(55,65,81,0.8)',
-    background: 'rgba(31,41,55,0.9)',
+    background: 'rgba(31,41,55,1)',
+    border: '1px solid rgba(55,65,81,1)',
     color: '#D1D5DB',
-    fontSize: 13,
+    fontSize: 12,
     cursor: 'pointer',
   },
   chatDisplay: {
     flex: 1,
     overflowY: 'auto',
-    paddingRight: 4,
   },
   loadingArea: {
     height: '100%',
@@ -571,16 +525,11 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#E5E7EB',
-    gap: 10,
-  },
-  loadingText: {
-    fontSize: 15,
     color: '#9CA3AF',
   },
   spinner: {
-    marginBottom: 4,
-    color: '#60A5FA',
+    color: '#3B82F6',
+    marginBottom: 10,
   },
   welcome: {
     height: '100%',
@@ -590,197 +539,157 @@ const styles = {
     justifyContent: 'center',
     textAlign: 'center',
     padding: '0 40px',
-    color: '#E5E7EB',
   },
   welcomeTitle: {
-    fontSize: 23,
+    fontSize: 22,
     fontWeight: 600,
     marginBottom: 8,
   },
   welcomeBody: {
-  errorState: {
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    padding: '0 40px',
-    color: '#FCA5A5',
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: 600,
-    marginBottom: 8,
-    color: '#FCA5A5',
-  },
-  errorBody: {
-    fontSize: 15,
-    color: '#FECACA',
-    maxWidth: 520,
-  },
-    fontSize: 15,
+    fontSize: 14,
     color: '#9CA3AF',
-    maxWidth: 520,
+    maxWidth: 480,
   },
   insightCard: {
-    background: 'radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.85))',
-    borderRadius: 18,
-    border: '1px solid rgba(55,65,81,0.9)',
+    background: 'rgba(31,41,55,0.5)',
+    borderRadius: 12,
     padding: 20,
-    boxShadow: '0 22px 50px rgba(15,23,42,0.7)',
+    border: '1px solid rgba(55,65,81,0.5)',
+    marginBottom: 16,
   },
   cardHeader: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 700,
+    color: '#60A5FA',
     textTransform: 'uppercase',
-    color: '#BFDBFE',
-    marginBottom: 10,
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    letterSpacing: 1.2,
+    marginBottom: 12,
+  },
+  questionText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginBottom: 4,
   },
   answerText: {
     fontSize: 15,
-    color: '#E5E7EB',
     lineHeight: 1.6,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   vizRow: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
-    gap: 12,
-    alignItems: 'stretch',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 16,
   },
   vizBox: {
-    padding: 12,
-    background: 'rgba(15,23,42,0.9)',
-    borderRadius: 10,
-    border: '1px solid rgba(55,65,81,0.9)',
+    background: 'rgba(15,23,42,0.8)',
+    padding: 16,
+    borderRadius: 8,
   },
   tableBox: {
-    padding: 12,
-    background: 'rgba(15,23,42,0.9)',
-    borderRadius: 10,
-    border: '1px solid rgba(55,65,81,0.9)',
-    display: 'flex',
-    flexDirection: 'column',
+    background: 'rgba(15,23,42,0.8)',
+    padding: 16,
+    borderRadius: 8,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#9CA3AF',
+    fontSize: 11,
+    color: '#6B7280',
     textTransform: 'uppercase',
-    letterSpacing: 0.9,
-    marginBottom: 6,
+    marginBottom: 10,
   },
   tableWrapper: {
-    maxHeight: 220,
+    maxHeight: 240,
     overflow: 'auto',
-    borderRadius: 6,
-    border: '1px solid rgba(31,41,55,0.9)',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    fontSize: 13,
+    fontSize: 12,
   },
   th: {
-    position: 'sticky',
-    top: 0,
-    background: 'rgba(15,23,42,0.98)',
     textAlign: 'left',
-    padding: '8px 10px',
-    borderBottom: '1px solid rgba(31,41,55,0.9)',
-    color: '#9CA3AF',
-    fontWeight: 500,
+    padding: '8px',
+    borderBottom: '1px solid #334155',
+    color: '#94A3B8',
   },
   td: {
-  questionText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 6,
-  },
-    padding: '9px 12px',
-    borderBottom: '1px solid rgba(31,41,55,0.8)',
-    color: '#E5E7EB',
-    whiteSpace: 'nowrap',
+    padding: '8px',
+    borderBottom: '1px solid #1E293B',
   },
   inputContainer: {
     display: 'flex',
     gap: 10,
-    paddingTop: 10,
-    paddingBottom: 2,
-    alignItems: 'center',
+    padding: '16px 0',
   },
   inputShell: {
     flex: 1,
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    padding: '14px 16px',
-    borderRadius: 999,
-    border: '1px solid rgba(55,65,81,0.9)',
-    background: 'rgba(15,23,42,0.95)',
+    gap: 12,
+    background: '#0F172A',
+    padding: '0 16px',
+    borderRadius: 8,
+    border: '1px solid #334155',
   },
   input: {
     flex: 1,
     background: 'transparent',
     border: 'none',
-    outline: 'none',
-    color: '#F9FAFB',
+    color: 'white',
+    height: 48,
     fontSize: 14,
+    outline: 'none',
   },
   button: {
-    padding: '14px 24px',
-    borderRadius: 999,
+    background: '#2563EB',
+    color: 'white',
     border: 'none',
-    background: 'linear-gradient(135deg, #2563EB, #4F46E5)',
-    color: '#F9FAFB',
-    fontSize: 14,
-    fontWeight: 500,
+    borderRadius: 8,
+    padding: '0 24px',
+    fontWeight: 600,
     cursor: 'pointer',
-    minWidth: 110,
   },
   label: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#9CA3AF',
-    marginTop: 10,
-    marginBottom: 6,
+    fontSize: 11,
+    color: '#64748B',
     textTransform: 'uppercase',
-    letterSpacing: 0.9,
+    marginTop: 20,
+    marginBottom: 8,
   },
   code: {
-    background: 'rgba(15,23,42,0.95)',
-    color: '#E5E7EB',
-    padding: 10,
-    fontSize: 13,
-    borderRadius: 10,
-    overflowY: 'auto',
-    border: '1px solid rgba(31,41,55,0.9)',
-    maxHeight: 260,
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
+    background: '#020617',
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 12,
+    color: '#E2E8F0',
+    overflowX: 'auto',
+    border: '1px solid #1E293B',
   },
   cite: {
-    fontSize: 14,
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    color: '#E5E7EB',
-  },
-  placeholder: {
-    color: '#6B7280',
-    fontSize: 14,
+    gap: 8,
+    fontSize: 12,
     marginTop: 8,
   },
-  noViz: {
-    textAlign: 'center',
-    color: '#6B7280',
+  placeholder: {
     fontSize: 13,
-    padding: '20px 8px',
+    color: '#475569',
+    lineHeight: 1.5,
+  },
+  errorState: {
+    textAlign: 'center',
+    padding: '40px',
+  },
+  errorTitle: {
+    fontSize: 18,
+    color: '#F87171',
+    marginBottom: 8,
+  },
+  errorBody: {
+    color: '#94A3B8',
+    fontSize: 14,
   },
 };
 
